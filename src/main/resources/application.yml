@@ -1,0 +1,8 @@
+spring:
+  profiles:
+    active: dev
+
+app:
+  name: "Task Manager Core"
+  max-tasks: 5
+  default-priority: MEDIUM
