@@ -1,75 +1,109 @@
 package com.example.core3.service;
 
-import com.example.core3.model.Task;
-import com.example.core3.model.Priority;
-import com.example.core3.model.Status;
-import com.example.core3.repository.TaskRepository;
 import com.example.core3.config.AppProperties;
-import org.springframework.beans.factory.ObjectProvider;
+import com.example.core3.dto.TaskForm;
+import com.example.core3.entity.Priority;
+import com.example.core3.entity.Status;
+import com.example.core3.entity.Task;
+import com.example.core3.entity.User;
+import com.example.core3.exception.EntityNotFoundException;
+import com.example.core3.exception.TaskAccessDeniedException;
+import com.example.core3.mapper.TaskMapper;
+import com.example.core3.repository.TaskRepository;
+import com.example.core3.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
 
+    private static final Logger log = LoggerFactory.getLogger(TaskServiceImpl.class);
+
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
+    private final TaskMapper taskMapper;
     private final AppProperties appProperties;
-    private final ObjectProvider<TaskStatsService> statsProvider;
-
-    public TaskServiceImpl(TaskRepository taskRepository, 
-                           AppProperties appProperties, 
-                           ObjectProvider<TaskStatsService> statsProvider) {
-        this.taskRepository = taskRepository;
-        this.appProperties = appProperties;
-        this.statsProvider = statsProvider;
-    }
 
     @Override
-    public Task createTask(String title, String description, Priority priority) {
-        if (taskRepository.findAll().size() >= appProperties.getMaxTasks()) {
-            throw new RuntimeException("Превышен лимит задач: " + appProperties.getMaxTasks());
+    @Transactional
+    public Task createTask(TaskForm form, String username) {
+        User user = getUser(username);
+        long count = taskRepository.countByUserId(user.getId());
+        if (count >= appProperties.getMaxTasks()) {
+            throw new IllegalArgumentException("Превышен лимит задач: " + appProperties.getMaxTasks());
         }
 
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("Название задачи не может быть пустым");
-        }
+        Priority priority = form.getPriority() != null ? form.getPriority() : appProperties.getDefaultPriority();
+        Task task = new Task(form.getTitle().trim(), form.getDescription(), priority, user);
+        task.setStatus(form.getStatus() != null ? form.getStatus() : Status.NEW);
+        task.setDeadline(form.getDeadline());
 
-        if (priority == null) {
-            priority = appProperties.getDefaultPriority();
-        }
-
-        Task task = new Task(null, title, description, priority, Status.NEW);
-        return taskRepository.save(task);
+        Task saved = taskRepository.save(task);
+        log.info("Создана задача id={} для пользователя {}", saved.getId(), username);
+        return saved;
     }
 
     @Override
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<Task> getTasksForUser(String username) {
+        User user = getUser(username);
+        return taskRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
     }
 
     @Override
-    public void updateTaskStatus(Long id, Status status) {
-        taskRepository.updateStatus(id, status);
+    @Transactional(readOnly = true)
+    public Task getTaskForUser(Long taskId, String username) {
+        return findOwnedTask(taskId, username);
     }
 
     @Override
-    public void showStats() {
-        TaskStatsService stats1 = statsProvider.getObject();
-        TaskStatsService stats2 = statsProvider.getObject();
-        System.out.println("Stats UUID 1: " + stats1.getUuid());
-        System.out.println("Stats UUID 2: " + stats2.getUuid());
+    @Transactional
+    public Task updateTask(Long taskId, TaskForm form, String username) {
+        Task task = findOwnedTask(taskId, username);
+        taskMapper.updateEntity(task, form);
+        Task saved = taskRepository.save(task);
+        log.info("Обновлена задача id={} пользователем {}", taskId, username);
+        return saved;
     }
 
-    @PostConstruct // R7
-    public void init() {
-        System.out.println("TaskService инициализирован");
+    @Override
+    @Transactional
+    public void deleteTask(Long taskId, String username) {
+        Task task = findOwnedTask(taskId, username);
+        taskRepository.delete(task);
+        log.info("Удалена задача id={} пользователем {}", taskId, username);
     }
 
-    @PreDestroy // R8
-    public void destroy() {
-        int count = taskRepository.findAll().size();
-        System.out.println("Завершение работы. Задач в хранилище: " + count);
+    @Override
+    @Transactional
+    public Task updateStatus(Long taskId, Status status, String username) {
+        Task task = findOwnedTask(taskId, username);
+        task.setStatus(status);
+        Task saved = taskRepository.save(task);
+        log.info("Изменён статус задачи id={} на {} пользователем {}", taskId, status, username);
+        return saved;
+    }
+
+    private Task findOwnedTask(Long taskId, String username) {
+        User user = getUser(username);
+        return taskRepository.findByIdAndUserId(taskId, user.getId())
+                .orElseThrow(() -> {
+                    if (taskRepository.existsById(taskId)) {
+                        log.warn("Попытка доступа к чужой задаче id={} пользователем {}", taskId, username);
+                        return new TaskAccessDeniedException("Нет доступа к этой задаче");
+                    }
+                    return new EntityNotFoundException("Задача не найдена: " + taskId);
+                });
+    }
+
+    private User getUser(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
     }
 }

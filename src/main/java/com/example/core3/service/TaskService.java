@@ -1,12 +1,22 @@
 package com.example.core3.service;
 
-import com.example.core3.model.Task;
-import com.example.core3.model.Priority;
+import com.example.core3.dto.TaskForm;
+import com.example.core3.entity.Status;
+import com.example.core3.entity.Task;
+
 import java.util.List;
 
 public interface TaskService {
-    Task createTask(String title, String description, Priority priority);
-    List<Task> getAllTasks();
-    void updateTaskStatus(Long id, com.example.core3.model.Status status);
-    void showStats(); // Для R15
+
+    Task createTask(TaskForm form, String username);
+
+    List<Task> getTasksForUser(String username);
+
+    Task getTaskForUser(Long taskId, String username);
+
+    Task updateTask(Long taskId, TaskForm form, String username);
+
+    void deleteTask(Long taskId, String username);
+
+    Task updateStatus(Long taskId, Status status, String username);
 }

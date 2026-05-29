@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${task.title})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <div class="card">
+        <h1 th:text="${task.title}">Задача</h1>
+        <p><span class="badge" th:classappend="' badge-' + ${task.status}" th:text="${task.status}"></span>
+           <span class="badge" th:classappend="' badge-' + ${task.priority}" th:text="${task.priority}"></span></p>
+        <p th:if="${task.description}" th:text="${task.description}">Описание</p>
+        <p class="meta">
+            Срок:
+            <span th:text="${task.deadline != null ? #temporals.format(task.deadline, 'dd.MM.yyyy') : 'не задан'}"></span>
+        </p>
+        <p class="meta">
+            Создано: <span th:text="${#temporals.format(task.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+            · Обновлено: <span th:text="${#temporals.format(task.updatedAt, 'dd.MM.yyyy HH:mm')}"></span>
+        </p>
+        <div class="actions" style="margin-top:1rem;">
+            <a th:href="@{/tasks/{id}/edit(id=${task.id})}" class="btn btn-primary">Редактировать</a>
+            <a th:href="@{/tasks}" class="btn btn-secondary">К списку</a>
+            <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post" class="inline-form"
+                  onsubmit="return confirm('Удалить задачу?');">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn btn-danger">Удалить</button>
+            </form>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

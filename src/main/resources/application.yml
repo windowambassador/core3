@@ -1,8 +1,18 @@
 spring:
+  application:
+    name: task-manager
   profiles:
     active: dev
 
 app:
-  name: "Task Manager Core"
-  max-tasks: 5
+  name: Task Manager
+  max-tasks: 100
   default-priority: MEDIUM
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.example.core3: DEBUG

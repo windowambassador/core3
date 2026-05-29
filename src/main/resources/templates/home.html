@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Главная')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <div class="card">
+        <h1 th:text="${appName}">Task Manager</h1>
+        <p>Добро пожаловать, <strong th:text="${username}">user</strong>!</p>
+        <p>Управляйте своими задачами: создавайте, редактируйте, отслеживайте статус и приоритет.</p>
+        <a th:href="@{/tasks}" class="btn btn-primary">Перейти к задачам</a>
+        <a th:href="@{/tasks/new}" class="btn btn-secondary">Создать задачу</a>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

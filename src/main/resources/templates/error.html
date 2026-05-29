@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Ошибка')}"></head>
+<body>
+<div class="container">
+    <div class="card auth-card">
+        <h1 th:text="${errorTitle != null ? errorTitle : 'Ошибка'}">Ошибка</h1>
+        <p th:text="${errorMessage != null ? errorMessage : 'Что-то пошло не так.'}">Сообщение</p>
+        <a th:href="@{/tasks}" class="btn btn-primary">К задачам</a>
+        <a th:href="@{/login}" class="btn btn-secondary">На страницу входа</a>
+    </div>
+</div>
+</body>
+</html>

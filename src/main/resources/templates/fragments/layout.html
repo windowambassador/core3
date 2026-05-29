@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${title}">Task Manager</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header th:fragment="header" class="header">
+    <div class="container header-inner">
+        <a th:href="@{/tasks}" class="logo" th:text="${appName != null ? appName : 'Task Manager'}">Task Manager</a>
+        <nav sec:authorize="isAuthenticated()">
+            <a th:href="@{/tasks}">Задачи</a>
+            <a th:href="@{/tasks/new}">Создать</a>
+            <a th:href="@{/home}">Главная</a>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn-link">Выйти</button>
+            </form>
+            <span class="user-badge" sec:authentication="name">user</span>
+        </nav>
+    </div>
+</header>
+
+<footer th:fragment="footer" class="footer">
+    <div class="container">
+        <p>&copy; <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy')}">2026</span> Task Manager</p>
+    </div>
+</footer>
+</body>
+</html>

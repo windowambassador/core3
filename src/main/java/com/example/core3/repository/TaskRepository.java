@@ -1,11 +1,16 @@
 package com.example.core3.repository;
 
-import com.example.core3.model.Task;
-import java.util.List;
+import com.example.core3.entity.Task;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TaskRepository {
-    List<Task> findAll();
-    Task save(Task task);
-    void delete(Long id);
-    void updateStatus(Long id, com.example.core3.model.Status status);
+import java.util.List;
+import java.util.Optional;
+
+public interface TaskRepository extends JpaRepository<Task, Long> {
+
+    List<Task> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    Optional<Task> findByIdAndUserId(Long id, Long userId);
+
+    long countByUserId(Long userId);
 }
